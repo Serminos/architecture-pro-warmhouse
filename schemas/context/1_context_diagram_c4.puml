@@ -1,0 +1,15 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+Person(owner, "Владелец дома", "Пользователь, который управляет датчиками и просматривает температуру через веб-интерфейс")
+Person(installer, "Монтажник", "Специалист, выезжающий для физического подключения датчиков")
+
+System(smartHome, "Монолит 'Тёплый дом'", "Go-приложение с PostgreSQL, управляет датчиками и получает температуру от внешнего API")
+
+System_Ext(tempApi, "Temperature API", "Внешний сервис, который опрашивает физические датчики и отдаёт показания")
+
+Rel(owner, smartHome, "Использует веб-интерфейс / API", "HTTPS")
+Rel(installer, smartHome, "Регистрирует новые датчики (через API или админку)", "HTTPS")
+Rel(smartHome, tempApi, "Запрашивает текущую температуру для датчиков", "HTTPS")
+
+@enduml
