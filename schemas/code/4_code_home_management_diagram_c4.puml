@@ -1,0 +1,71 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' Сущности (модели)
+class Home {
+    - id: UUID
+    - name: String
+    - ownerId: UUID
+    - createdAt: DateTime
+    - updatedAt: DateTime
+    + getName(): String
+    + setName(name: String): void
+}
+
+class Room {
+    - id: UUID
+    - homeId: UUID
+    - name: String
+    - type: String (living, bedroom, kitchen...)
+    - createdAt: DateTime
+    + getName(): String
+    + setName(name: String): void
+}
+
+class Invitation {
+    - id: UUID
+    - homeId: UUID
+    - invitedUserId: UUID
+    - role: String (owner, member, guest)
+    - status: String (pending, accepted, declined)
+    - createdAt: DateTime
+    + accept(): void
+    + decline(): void
+}
+
+class HomeConfiguration {
+    - homeId: UUID
+    - timezone: String
+    - location: String (геокоординаты или адрес)
+    - createdAt: DateTime
+    - updatedAt: DateTime
+    + getTimezone(): String
+    + setTimezone(tz: String): void
+}
+
+' Репозиторий (DAO)
+class HomeRepository {
+    + findById(id: UUID): Home
+    + findByOwner(ownerId: UUID): List<Home>
+    + save(home: Home): Home
+    + delete(id: UUID): void
+    + findRoomsByHome(homeId: UUID): List<Room>
+    + addRoom(room: Room): Room
+    + removeRoom(roomId: UUID): void
+    + findInvitationsByHome(homeId: UUID): List<Invitation>
+    + saveInvitation(invitation: Invitation): Invitation
+    + updateInvitationStatus(invitationId: UUID, status: String): void
+    + findConfigurationByHome(homeId: UUID): HomeConfiguration
+    + saveConfiguration(config: HomeConfiguration): HomeConfiguration
+}
+
+' Связи
+Home "1" -- "0..*" Room : содержит
+Home "1" -- "0..*" Invitation : имеет
+Home "1" -- "1" HomeConfiguration : имеет конфигурацию
+HomeRepository --> Home : управляет
+HomeRepository --> Room : управляет
+HomeRepository --> Invitation : управляет
+HomeRepository --> HomeConfiguration : управляет
+
+@enduml
