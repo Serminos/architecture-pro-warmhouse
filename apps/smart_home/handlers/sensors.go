@@ -9,6 +9,7 @@ import (
 
 	"smarthome/db"
 	"smarthome/models"
+	"smarthome/kafka"
 	"smarthome/services"
 
 	"github.com/gin-gonic/gin"
@@ -60,6 +61,14 @@ func (h *SensorHandler) GetSensors(c *gin.Context) {
 				sensors[i].Status = tempData.Status
 				sensors[i].LastUpdated = tempData.Timestamp
 				log.Printf("Updated temperature data for sensor %d from external API", sensor.ID)
+
+				kafka.Publish("temperature-events", fmt.Sprintf("%d", sensor.ID), map[string]interface{}{
+                        "sensorId": sensor.ID,
+                        "location": sensor.Location,
+                        "value":    tempData.Value,
+                        "unit":     tempData.Unit,
+                        "timestamp": tempData.Timestamp,
+                    })
 			} else {
 				log.Printf("Failed to fetch temperature data for sensor %d: %v", sensor.ID, err)
 			}
@@ -92,6 +101,14 @@ func (h *SensorHandler) GetSensorByID(c *gin.Context) {
 			sensor.Status = tempData.Status
 			sensor.LastUpdated = tempData.Timestamp
 			log.Printf("Updated temperature data for sensor %d from external API", sensor.ID)
+
+            kafka.Publish("temperature-events", fmt.Sprintf("%d", sensor.ID), map[string]interface{}{
+                "sensorId": sensor.ID,
+                "location": sensor.Location,
+                "value":    tempData.Value,
+                "unit":     tempData.Unit,
+                "timestamp": tempData.Timestamp,
+            })
 		} else {
 			log.Printf("Failed to fetch temperature data for sensor %d: %v", sensor.ID, err)
 		}
@@ -141,6 +158,16 @@ func (h *SensorHandler) CreateSensor(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+    kafka.Publish("device-events", fmt.Sprintf("%d", sensor.ID), map[string]interface{}{
+        "event":   "device.created",
+        "id":      sensor.ID,
+        "name":    sensor.Name,
+        "type":    sensor.Type,
+        "location": sensor.Location,
+        "unit":    sensor.Unit,
+        "status":  sensor.Status,
+    })
 
 	c.JSON(http.StatusCreated, sensor)
 }
