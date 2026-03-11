@@ -147,6 +147,7 @@
 [Спецификация Device Management API](schemas/api/device_management_service_api.yaml)
 
 # Задание 5. Работа с docker и docker-compose
++++ Сделано +++
 
 Перейдите в apps.
 
@@ -201,6 +202,7 @@ Locations - название комнаты, sensorId - идентификато
 
 Ревьюер будет проверять точно так же.
 
++++ Сделано +++
 
 # **Задание 6. Разработка MVP**
 
