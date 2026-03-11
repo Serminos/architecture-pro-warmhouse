@@ -127,11 +127,24 @@
 
 ### 1. Тип API
 
-Укажите, какой тип API вы будете использовать для взаимодействия микросервисов. Объясните своё решение.
+Для взаимодействия между микросервисами используется гибридный подход:
+- Синхронные вызовы (REST / gRPC) – применяются для операций, требующих немедленного ответа, например:
+  - Получение текущего состояния устройства (API Gateway → Device Management Service)
+  - Проверка прав доступа (API Gateway → User Service)
+  - Выполнение команды на устройстве (Automation Service → Device Management Service)
+    Почему REST/gRPC: простота реализации, широкая поддержка, возможность использовать HTTP/2 для gRPC, что повышает производительность.
+
+- Асинхронные события (Message Broker – Kafka / RabbitMQ) – для уведомления об изменениях и передачи потоковых данных:
+  - Новые показания датчиков (Device Integration Service → Telemetry Service, Automation Service)
+  - Изменение состояния устройства (Device Management Service → Notification Service, Automation Service)
+  - События домов/комнат (Home Service → Notification Service)
+    Почему асинхронность: обеспечивает слабую связанность, отказоустойчивость, возможность масштабирования подписчиков.
+
+Внешнее API для клиентов (веб, мобильные приложения) реализовано через REST API за API Gateway, который маршрутизирует запросы к соответствующим микросервисам.
 
 ### 2. Документация API
-
-Здесь приложите ссылки на документацию API для микросервисов, которые вы спроектировали в первой части проектной работы. Для документирования используйте Swagger/OpenAPI или AsyncAPI.
+[Спецификация Home Management API](schemas/api/home_management_service_api.yaml)
+[Спецификация Device Management API](schemas/api/device_management_service_api.yaml)
 
 # Задание 5. Работа с docker и docker-compose
 

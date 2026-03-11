@@ -1,0 +1,323 @@
+openapi: 3.0.0
+info:
+  title: Home Service API
+  version: 1.0.0
+  description: Управление домами, комнатами, приглашениями и настройками
+servers:
+  - url: /api/v1
+    description: Базовый путь API
+paths:
+  /homes:
+    post:
+      summary: Создать новый дом
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHomeRequest'
+      responses:
+        '201':
+          description: Дом создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Home'
+        '400':
+          description: Ошибка валидации
+        '401':
+          description: Не авторизован
+    get:
+      summary: Получить список домов текущего пользователя
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список домов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Home'
+  /homes/{homeId}:
+    parameters:
+      - name: homeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Получить дом по ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Дом
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Home'
+        '404':
+          description: Дом не найден
+    put:
+      summary: Обновить данные дома
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHomeRequest'
+      responses:
+        '200':
+          description: Дом обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Home'
+    delete:
+      summary: Удалить дом
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Дом удалён
+  /homes/{homeId}/rooms:
+    parameters:
+      - name: homeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      summary: Добавить комнату в дом
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoomRequest'
+      responses:
+        '201':
+          description: Комната создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+    get:
+      summary: Получить список комнат дома
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список комнат
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Room'
+  /homes/{homeId}/invitations:
+    parameters:
+      - name: homeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      summary: Пригласить пользователя в дом
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvitationRequest'
+      responses:
+        '201':
+          description: Приглашение отправлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+    get:
+      summary: Список приглашений для дома
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список приглашений
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Invitation'
+  /homes/{homeId}/configuration:
+    parameters:
+      - name: homeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Получить настройки дома
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Настройки
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeConfiguration'
+    put:
+      summary: Обновить настройки дома
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConfigurationRequest'
+      responses:
+        '200':
+          description: Настройки обновлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeConfiguration'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Home:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        ownerId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateHomeRequest:
+      type: object
+      required:
+        - name
+        - timezone
+      properties:
+        name:
+          type: string
+        timezone:
+          type: string
+        location:
+          type: string
+    UpdateHomeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+    Room:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        homeId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+          enum: [living, bedroom, kitchen, bathroom, other]
+        createdAt:
+          type: string
+          format: date-time
+    CreateRoomRequest:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [living, bedroom, kitchen, bathroom, other]
+    Invitation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        homeId:
+          type: string
+          format: uuid
+        invitedUserId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [owner, member, guest]
+        status:
+          type: string
+          enum: [pending, accepted, declined]
+        createdAt:
+          type: string
+          format: date-time
+    CreateInvitationRequest:
+      type: object
+      required:
+        - email
+        - role
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [member, guest]
+    HomeConfiguration:
+      type: object
+      properties:
+        homeId:
+          type: string
+          format: uuid
+        timezone:
+          type: string
+        location:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+    UpdateConfigurationRequest:
+      type: object
+      properties:
+        timezone:
+          type: string
+        location:
+          type: string
