@@ -11,6 +11,7 @@ import (
 
 	"smarthome/db"
 	"smarthome/handlers"
+	"smarthome/kafka"
 	"smarthome/services"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,10 @@ func main() {
 	defer database.Close()
 
 	log.Println("Connected to database successfully")
+
+    kafka.Init()
+    defer kafka.Close()
+    log.Println("Kafka producer initialized successfully")
 
 	// Initialize temperature service
 	temperatureAPIURL := getEnv("TEMPERATURE_API_URL", "http://temperature-api:8081")

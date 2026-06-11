@@ -1,0 +1,70 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(user, "Пользователь", "Владелец дома, использует веб/мобильное приложение")
+System_Ext(web, "Веб-приложение", "React/SPA")
+System_Ext(mobile, "Мобильное приложение", "iOS/Android")
+
+Boundary(gateway, "API Gateway") {
+    Container(api_gateway, "API Gateway", "Kong/Nginx", "Маршрутизация, аутентификация, rate limiting")
+}
+
+Boundary(services, "Микросервисы") {
+    Container(user_svc, "User Service", "Go/Spring", "Управление пользователями")
+    Container(home_svc, "Home Service", "Go/Spring", "Управление домами/комнатами")
+    Container(device_svc, "Device Management Service", "Go/Spring", "Регистрация, состояние, команды устройств")
+    Container(telemetry_svc, "Telemetry Service", "Python/Go", "Сбор и хранение телеметрии")
+    Container(automation_svc, "Automation Service", "Go/Spring", "Сценарии и расписания")
+    Container(notification_svc, "Notification Service", "Go/Spring", "Уведомления")
+    Container(device_int_svc, "Device Integration Service", "Go/Node.js", "Интеграция с устройствами по протоколам")
+    Container(external_svc, "External Integration Service", "Go/Spring", "Интеграция с внешними API")
+}
+
+Boundary(dbs, "Базы данных") {
+    ContainerDb(user_db, "User DB", "PostgreSQL")
+    ContainerDb(home_db, "Home DB", "PostgreSQL")
+    ContainerDb(device_db, "Device DB", "PostgreSQL + Redis")
+    ContainerDb(telemetry_db, "Telemetry DB", "TimescaleDB")
+    ContainerDb(automation_db, "Automation DB", "PostgreSQL")
+    ContainerDb(notification_db, "Notification DB", "PostgreSQL")
+    ContainerDb(device_int_db, "Device Integration DB", "PostgreSQL")
+    ContainerDb(external_db, "External Integration DB", "PostgreSQL")
+}
+
+Container(message_broker, "Message Broker", "Kafka/RabbitMQ", "Асинхронные события")
+
+System_Ext(physical_devices, "Физические устройства", "Датчики, реле, камеры")
+System_Ext(external_apis, "Внешние сервисы", "API погоды, энергосбытов и др.")
+
+Rel(user, web, "Посещает")
+Rel(user, mobile, "Использует")
+Rel(web, api_gateway, "Вызывает API", "HTTPS")
+Rel(mobile, api_gateway, "Вызывает API", "HTTPS")
+
+Rel(api_gateway, user_svc, "Запросы пользователей", "gRPC/REST")
+Rel(api_gateway, home_svc, "Запросы домов", "gRPC/REST")
+Rel(api_gateway, device_svc, "Запросы устройств", "gRPC/REST")
+Rel(api_gateway, telemetry_svc, "Запросы телеметрии", "gRPC/REST")
+Rel(api_gateway, automation_svc, "Запросы сценариев", "gRPC/REST")
+Rel(api_gateway, notification_svc, "Запросы уведомлений", "gRPC/REST")
+
+' Связи с БД
+Rel(user_svc, user_db, "Читает/пишет", "SQL")
+Rel(home_svc, home_db, "Читает/пишет", "SQL")
+Rel(device_svc, device_db, "Читает/пишет", "SQL/Redis")
+Rel(telemetry_svc, telemetry_db, "Читает/пишет", "SQL/TimescaleDB")
+Rel(automation_svc, automation_db, "Читает/пишет", "SQL")
+Rel(notification_svc, notification_db, "Читает/пишет", "SQL")
+Rel(device_int_svc, device_int_db, "Читает/пишет", "SQL")
+Rel(external_svc, external_db, "Читает/пишет", "SQL")
+
+' События через брокер
+Rel(device_int_svc, message_broker, "Публикует события", "async")
+Rel(telemetry_svc, message_broker, "Подписывается", "async")
+Rel(automation_svc, message_broker, "Подписывается", "async")
+Rel(notification_svc, message_broker, "Подписывается", "async")
+Rel(external_svc, message_broker, "Публикует события", "async")
+
+Rel(device_int_svc, physical_devices, "Управляет и получает данные", "MQTT/HTTP/Zigbee")
+Rel(external_svc, external_apis, "Запрашивает данные", "HTTPS")
+@enduml

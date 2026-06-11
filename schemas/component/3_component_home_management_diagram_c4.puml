@@ -1,0 +1,32 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+Container(home_svc, "Home Service", "Микросервис управления домами")
+
+Boundary(home_components, "Компоненты Home Service") {
+    Component(api, "API Layer", "REST/gRPC", "Принимает запросы от API Gateway")
+    Component(orchestrator, "Home Orchestrator", "Модуль", "Координирует операции с домами и комнатами")
+    Component(home_repo, "Home Repository", "DAO", "Доступ к данным домов и комнат в PostgreSQL")
+    Component(invitation, "Invitation Manager", "Модуль", "Управляет приглашениями пользователей в дом")
+    Component(config, "Configuration Manager", "Модуль", "Управляет настройками дома (часовой пояс, геолокация)")
+    Component(event_pub, "Event Publisher", "Модуль", "Публикует события об изменениях домов/комнат в Kafka")
+}
+
+ContainerDb(home_db, "Home DB", "PostgreSQL", "Хранит данные о домах, комнатах, приглашениях и настройках")
+Container(message_broker, "Message Broker", "Kafka", "Асинхронные события")
+
+' Связи между компонентами
+Rel(api, orchestrator, "Вызывает")
+Rel(orchestrator, home_repo, "Читает/пишет")
+Rel(orchestrator, invitation, "Использует")
+Rel(orchestrator, config, "Использует")
+Rel(invitation, home_repo, "Читает/пишет")
+Rel(config, home_repo, "Читает/пишет")
+Rel(orchestrator, event_pub, "Публикует события")
+Rel(event_pub, message_broker, "Публикует")
+
+' Внешние связи
+Rel(home_repo, home_db, "SQL")
+Rel(api, user_svc, "Проверка прав пользователей", "gRPC")  ' User Service внешний
+Rel(api, device_svc, "Проверка привязки устройств", "gRPC")  ' Device Management Service внешний
+@enduml

@@ -1,0 +1,38 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+Container(device_svc, "Device Management Service", "Микросервис управления устройствами")
+
+Boundary(device_components, "Компоненты Device Management Service") {
+    Component(api, "API Layer", "REST/gRPC", "Принимает команды от API Gateway и других сервисов")
+    Component(registry, "Device Registry", "Модуль", "Регистрация новых устройств, хранение метаданных (тип, модель, capabilities)")
+    Component(state_mgr, "State Manager", "Модуль", "Управление состоянием устройства (вкл/выкл, команды)")
+    Component(attachment, "Attachment Manager", "Модуль", "Привязка/отвязка устройств к дому и комнате")
+    Component(capability, "Capability Manager", "Модуль", "Описание возможностей устройства (что умеет)")
+    Component(device_repo, "Device Repository", "DAO", "Доступ к данным устройств в PostgreSQL и Redis")
+    Component(event_pub, "Event Publisher", "Модуль", "Публикует события об изменениях состояния/регистрации в Kafka")
+}
+
+ContainerDb(device_db, "Device DB", "PostgreSQL + Redis", "PostgreSQL для метаданных, Redis для текущего состояния")
+Container(message_broker, "Message Broker", "Kafka", "Асинхронные события")
+
+' Связи между компонентами
+Rel(api, registry, "Вызывает")
+Rel(api, state_mgr, "Вызывает")
+Rel(api, attachment, "Вызывает")
+Rel(registry, capability, "Использует для проверки")
+Rel(registry, device_repo, "Читает/пишет")
+Rel(state_mgr, device_repo, "Читает/пишет состояние")
+Rel(attachment, device_repo, "Читает/пишет привязки")
+Rel(capability, device_repo, "Читает/пишет")
+Rel(registry, event_pub, "Публикует событие регистрации")
+Rel(state_mgr, event_pub, "Публикует событие изменения состояния")
+Rel(attachment, event_pub, "Публикует событие привязки")
+Rel(event_pub, message_broker, "Публикует")
+
+' Связи с БД
+Rel(device_repo, device_db, "SQL/Redis")
+
+' Внешние вызовы
+Rel(api, integration_svc, "Отправка команд на устройство", "gRPC")  ' Device Integration Service внешний
+@enduml

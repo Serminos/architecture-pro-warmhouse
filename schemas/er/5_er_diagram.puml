@@ -1,0 +1,156 @@
+@startuml
+!define table(x) class x << (T,#FFAAAA) >>
+!define primary_key(x) <u>x</u>
+!define foreign_key(x) <i>x</i>
+
+' User Service
+table(User) {
+  + primary_key(id): UUID
+  email: string
+  password_hash: string
+  name: string
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+' Home Service
+table(Home) {
+  + primary_key(id): UUID
+  name: string
+  foreign_key(owner_id): UUID
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+table(Room) {
+  + primary_key(id): UUID
+  foreign_key(home_id): UUID
+  name: string
+  type: string
+  created_at: timestamp
+}
+
+table(Invitation) {
+  + primary_key(id): UUID
+  foreign_key(home_id): UUID
+  foreign_key(invited_user_id): UUID
+  role: string
+  status: string
+  created_at: timestamp
+}
+
+table(HomeConfiguration) {
+  + foreign_key(home_id): UUID
+  timezone: string
+  location: string
+  updated_at: timestamp
+}
+
+' Device Management Service
+table(Device) {
+  + primary_key(id): UUID
+  type: string
+  model: string
+  manufacturer: string
+  capabilities: json
+  firmware_version: string
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+table(DeviceAttachment) {
+  + foreign_key(device_id): UUID
+  foreign_key(home_id): UUID
+  foreign_key(room_id): UUID
+  attached_at: timestamp
+}
+
+table(DeviceState) {
+  + foreign_key(device_id): UUID
+  state: json
+  last_seen: timestamp
+  updated_at: timestamp
+}
+
+' Telemetry Service
+table(Measurement) {
+  + primary_key(id): UUID
+  foreign_key(device_id): UUID
+  timestamp: timestamp
+  type: string
+  value: float
+  unit: string
+}
+
+' Automation Service
+table(Script) {
+  + primary_key(id): UUID
+  foreign_key(home_id): UUID
+  name: string
+  trigger: json
+  actions: json
+  enabled: boolean
+  created_at: timestamp
+}
+
+table(Schedule) {
+  + primary_key(id): UUID
+  foreign_key(script_id): UUID
+  cron_expression: string
+  timezone: string
+}
+
+' Notification Service
+table(NotificationChannel) {
+  + primary_key(id): UUID
+  foreign_key(user_id): UUID
+  channel_type: string
+  address: string
+  verified: boolean
+}
+
+table(NotificationSubscription) {
+  + primary_key(id): UUID
+  foreign_key(user_id): UUID
+  event_type: string
+  foreign_key(channel_id): UUID
+}
+
+' Integration Service
+table(IntegrationAdapter) {
+  + primary_key(id): UUID
+  protocol: string
+  config: json
+  status: string
+}
+
+' External Integration Service
+table(ExternalDataSource) {
+  + primary_key(id): UUID
+  name: string
+  type: string
+  api_endpoint: string
+  api_key: string
+  refresh_interval: integer
+}
+
+' Relationships
+User ||--o{ Home : "owns"
+Home ||--o{ Room : contains
+Home ||--o{ Invitation : "has"
+Home ||--|| HomeConfiguration : configures
+Invitation }o--|| User : "invites"
+
+Device ||--|| DeviceAttachment : "attached to"
+Home ||--o{ DeviceAttachment : "has devices"
+Room ||--o{ DeviceAttachment : "contains devices"
+Device ||--o{ Measurement : "produces"
+
+Home ||--o{ Script : "has scripts"
+Script ||--o{ Schedule : "scheduled by"
+
+User ||--o{ NotificationChannel : "has channels"
+User ||--o{ NotificationSubscription : "subscribes to"
+NotificationSubscription }o--|| NotificationChannel : "uses channel"
+
+@enduml

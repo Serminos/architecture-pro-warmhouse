@@ -1,0 +1,330 @@
+openapi: 3.0.0
+info:
+  title: Device Management Service API
+  version: 1.0.0
+  description: Управление устройствами (регистрация, состояние, привязка, команды)
+servers:
+  - url: /api/v1
+    description: Базовый путь API
+paths:
+  /devices:
+    post:
+      summary: Зарегистрировать новое устройство
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDeviceRequest'
+      responses:
+        '201':
+          description: Устройство зарегистрировано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '400':
+          description: Ошибка валидации
+    get:
+      summary: Получить список устройств пользователя
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: homeId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Фильтр по дому
+        - name: roomId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Фильтр по комнате
+        - name: type
+          in: query
+          schema:
+            type: string
+          description: Фильтр по типу устройства
+      responses:
+        '200':
+          description: Список устройств
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Device'
+  /devices/{deviceId}:
+    parameters:
+      - name: deviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Получить устройство по ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Устройство
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '404':
+          description: Устройство не найдено
+    put:
+      summary: Обновить метаданные устройства
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDeviceRequest'
+      responses:
+        '200':
+          description: Устройство обновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+    delete:
+      summary: Удалить устройство (отвязать и забыть)
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Устройство удалено
+  /devices/{deviceId}/state:
+    parameters:
+      - name: deviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Получить текущее состояние устройства
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Состояние
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceState'
+    put:
+      summary: Обновить состояние (внутреннее использование, от Device Integration)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStateRequest'
+      responses:
+        '200':
+          description: Состояние обновлено
+  /devices/{deviceId}/command:
+    parameters:
+      - name: deviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      summary: Отправить команду устройству
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandRequest'
+      responses:
+        '202':
+          description: Команда принята к исполнению
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandResponse'
+        '400':
+          description: Недопустимая команда
+  /devices/{deviceId}/attach:
+    parameters:
+      - name: deviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      summary: Привязать устройство к дому и комнате
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttachRequest'
+      responses:
+        '200':
+          description: Устройство привязано
+    delete:
+      summary: Отвязать устройство от дома/комнаты
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Устройство отвязано
+  /devices/capabilities/{type}:
+    get:
+      summary: Получить возможности устройства по типу
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список возможностей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Device:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        model:
+          type: string
+        manufacturer:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        firmwareVersion:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        attachedHomeId:
+          type: string
+          format: uuid
+        attachedRoomId:
+          type: string
+          format: uuid
+    RegisterDeviceRequest:
+      type: object
+      required:
+        - type
+        - model
+        - manufacturer
+      properties:
+        type:
+          type: string
+        model:
+          type: string
+        manufacturer:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        firmwareVersion:
+          type: string
+    UpdateDeviceRequest:
+      type: object
+      properties:
+        model:
+          type: string
+        firmwareVersion:
+          type: string
+    DeviceState:
+      type: object
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+        state:
+          type: object
+          additionalProperties: true
+        lastSeen:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    UpdateStateRequest:
+      type: object
+      required:
+        - state
+      properties:
+        state:
+          type: object
+          additionalProperties: true
+        lastSeen:
+          type: string
+          format: date-time
+    CommandRequest:
+      type: object
+      required:
+        - command
+      properties:
+        command:
+          type: string
+        parameters:
+          type: object
+          additionalProperties: true
+    CommandResponse:
+      type: object
+      properties:
+        requestId:
+          type: string
+        status:
+          type: string
+          enum: [accepted, rejected]
+    AttachRequest:
+      type: object
+      required:
+        - homeId
+      properties:
+        homeId:
+          type: string
+          format: uuid
+        roomId:
+          type: string
+          format: uuid

@@ -1,0 +1,22 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+Person(user, "Пользователь", "Владелец дома, управляет устройствами, настраивает сценарии, просматривает телеметрию через веб/мобильное приложение")
+
+System_Ext(web_app, "Веб-приложение", "React/SPA, доступ через браузер")
+System_Ext(mobile_app, "Мобильное приложение", "iOS/Android, доступ через смартфон")
+
+System(smartHomeEco, "Экосистема умного дома", "Микросервисная платформа для управления устройствами, сбора телеметрии, автоматизации и интеграций")
+
+System_Ext(partner_devices, "Устройства партнёров", "Датчики, реле, камеры, работающие по стандартным протоколам (Wi-Fi, Zigbee, Matter)")
+System_Ext(external_services, "Внешние сервисы", "API погоды, энергосбытовые компании, облака производителей")
+
+Rel(user, web_app, "Использует")
+Rel(user, mobile_app, "Использует")
+Rel(web_app, smartHomeEco, "Вызывает API", "HTTPS")
+Rel(mobile_app, smartHomeEco, "Вызывает API", "HTTPS")
+
+Rel(smartHomeEco, partner_devices, "Управляет и получает данные", "MQTT/HTTP/Zigbee")
+Rel(smartHomeEco, external_services, "Получает внешние данные", "HTTPS/API")
+
+@enduml
